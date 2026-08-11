@@ -18,7 +18,13 @@ function showError(body) {
 }
 
 async function initialise() {
-  const { data: { session }, error } = await client.auth.getSession();
+  let { data: { session }, error } = await client.auth.getSession();
+  const code = new URLSearchParams(location.search).get("code");
+  if (!session && code) {
+    const exchanged = await client.auth.exchangeCodeForSession(code);
+    session = exchanged.data.session;
+    error = exchanged.error;
+  }
   if (error) { showError(error.message); return; }
   if (!session) { showError("The link may have expired or already been used. Request a new email from the sign-in page."); return; }
   if (recoveryRequested) {
@@ -28,12 +34,21 @@ async function initialise() {
 
 resetForm.addEventListener("submit", async event => {
   event.preventDefault();
+  const submitButton = resetForm.querySelector("button");
   const password = document.querySelector("#newPassword").value;
   const confirmation = document.querySelector("#confirmPassword").value;
   if (password !== confirmation) { message.textContent = "The passwords do not match."; return; }
   if (password.length < 12) { message.textContent = "Use a password of at least 12 characters."; return; }
-  const { error } = await client.auth.updateUser({ password });
-  if (error) showError(error.message); else { resetForm.classList.add("hidden"); showSuccess("Password updated", "Your new password is ready to use."); }
+  submitButton.disabled = true; submitButton.textContent = "Updating…"; message.textContent = "Securely updating your password…";
+  try {
+    const result = await Promise.race([
+      client.auth.updateUser({ password }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("The password update timed out. Request a fresh reset email and try again.")), 15000)),
+    ]);
+    if (result.error) showError(result.error.message);
+    else { resetForm.classList.add("hidden"); showSuccess("Password updated", "Your new password is ready to use."); }
+  } catch (error) { showError(error.message); }
+  finally { submitButton.disabled = false; submitButton.textContent = "Set new password"; }
 });
 
 initialise();
