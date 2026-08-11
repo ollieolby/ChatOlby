@@ -21,6 +21,7 @@ async function call(action, data = {}) {
     method: "POST",
     headers: { "Content-Type": "application/json", apikey: config.supabaseAnonKey, Authorization: `Bearer ${session.access_token}` },
     body: JSON.stringify({ action, ...data }),
+    signal: AbortSignal.timeout(15000),
   });
   const result = await response.json();
   if (!response.ok) throw new Error(result.error || "Something went wrong");
@@ -72,7 +73,7 @@ form.addEventListener("submit", async (event) => {
   try {
     if (!activeId) await newConversation();
     const result = await call("user-message", { conversationId: activeId, body }); renderMessage(result.message); input.value = ""; input.style.height = "auto"; await loadConversations();
-  } catch (error) { notice.textContent = error.message; } finally { button.disabled = false; }
+  } catch (error) { notice.textContent = error.name === "TimeoutError" ? "The server took too long to respond. Please try again." : error.message; } finally { button.disabled = false; }
 });
 
 document.querySelector("#userLoginForm").addEventListener("submit", async event => {

@@ -70,7 +70,11 @@ Deno.serve(async (req) => {
       const updates: Record<string,string> = { updated_at: new Date().toISOString() };
       if (conversation.title === "Chat with Ollie") updates.title = body.slice(0, 45);
       await admin.from("conversations").update(updates).eq("id", conversation.id);
-      await notifyOperator(conversation.id, conversation.visitor_name || "a visitor", body); return json({ message: data });
+      EdgeRuntime.waitUntil(
+        notifyOperator(conversation.id, conversation.visitor_name || "a visitor", body)
+          .catch(pushError => console.error("Push notification setup failed", pushError)),
+      );
+      return json({ message: data });
     }
 
     if (!isOperator) return json({ error: "Not authorised" }, 403);

@@ -11,7 +11,7 @@ let activeId = null, conversationCache = [], pendingChatId = new URLSearchParams
 
 async function operatorCall(action, data = {}) {
   const { data: { session } } = await client.auth.getSession();
-  const response = await fetch(functionUrl, { method: "POST", headers: { "Content-Type": "application/json", apikey: config.supabaseAnonKey, Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ action, ...data }) });
+  const response = await fetch(functionUrl, { method: "POST", headers: { "Content-Type": "application/json", apikey: config.supabaseAnonKey, Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ action, ...data }), signal: AbortSignal.timeout(15000) });
   const result = await response.json(); if (!response.ok) throw new Error(result.error || "Request failed"); return result;
 }
 
