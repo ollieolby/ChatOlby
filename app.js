@@ -89,9 +89,16 @@ document.querySelector("#createAccountButton").addEventListener("click", async (
   const notice = document.querySelector("#userLoginNotice");
   if (!/^[A-Za-z0-9_]{3,24}$/.test(username)) { notice.textContent = "Choose a username of 3–24 letters, numbers, or underscores."; return; }
   if (!email || password.length < 12) { notice.textContent = "Enter a valid email and a password of at least 12 characters."; return; }
-  const safeRedirect = `${location.origin}${location.pathname}`;
+  const safeRedirect = new URL("auth.html", location.href).href;
   const { data, error } = await client.auth.signUp({ email, password, options: { emailRedirectTo: safeRedirect, data: { username } } });
   notice.textContent = error ? error.message : data.session ? "Account created." : "Account created. Check your email to confirm it, then sign in.";
+});
+document.querySelector("#forgotPasswordButton").addEventListener("click", async () => {
+  const email = document.querySelector("#userEmailInput").value.trim();
+  const notice = document.querySelector("#userLoginNotice");
+  if (!email) { notice.textContent = "Enter your email address first."; return; }
+  const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: new URL("auth.html?type=recovery", location.href).href });
+  notice.textContent = error ? error.message : "Check your email for a password-reset link.";
 });
 document.querySelector("#newChatButton").addEventListener("click", newConversation);
 document.querySelector("#signOutButton").addEventListener("click", () => client.auth.signOut());

@@ -22,6 +22,13 @@ document.querySelector("#loginForm").addEventListener("submit", async (event) =>
   const { error } = await client.auth.signInWithPassword({ email, password });
   document.querySelector("#loginNotice").textContent = error ? error.message : "Signed in.";
 });
+document.querySelector("#operatorForgotPasswordButton").addEventListener("click", async () => {
+  const email = document.querySelector("#emailInput").value.trim();
+  const notice = document.querySelector("#loginNotice");
+  if (!email) { notice.textContent = "Enter your email address first."; return; }
+  const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: new URL("auth.html?type=recovery", location.href).href });
+  notice.textContent = error ? error.message : "Check your email for a password-reset link.";
+});
 
 async function loadConversations() {
   const result = await operatorCall("operator-list"); conversationCache = result.conversations; listEl.replaceChildren();

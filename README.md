@@ -63,6 +63,8 @@ Push these files to a GitHub repository, then choose **Settings → Pages → De
 
 GitHub Pages automatically serves the included childlike Microsoft Paint-style `404.html` when a route does not exist.
 
+Add `/auth.html` to Supabase Authentication → URL Configuration → Redirect URLs. This page handles email confirmation and password recovery; the main and operator pages handle normal password sign-in.
+
 For a custom domain, add it in the same Pages settings. Put that exact HTTPS URL in Supabase's redirect allow-list too.
 
 ## Local preview

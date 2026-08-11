@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f5efe5" />
+    <meta name="referrer" content="strict-origin" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'" />
+    <title>Account verification</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="login-card auth-card">
+      <div id="authIcon" class="auth-icon" aria-hidden="true">…</div>
+      <h1 id="authTitle">Verifying your account</h1>
+      <p id="authMessage">Please keep this page open for a moment.</p>
+      <form id="resetForm" class="hidden">
+        <input id="newPassword" type="password" autocomplete="new-password" minlength="12" placeholder="New password" required />
+        <input id="confirmPassword" type="password" autocomplete="new-password" minlength="12" placeholder="Confirm new password" required />
+        <button class="primary-button" type="submit">Set new password</button>
+      </form>
+      <a id="continueLink" class="hidden" href="./">Continue to chat</a>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4"></script>
+    <script src="config.js"></script>
+    <script type="module" src="auth.js"></script>
+  </body>
+</html>
