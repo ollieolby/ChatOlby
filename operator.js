@@ -9,8 +9,13 @@ const replyForm = document.querySelector("#replyForm"), replyInput = document.qu
 const notificationButton = document.querySelector("#notificationButton");
 let activeId = null, conversationCache = [], pendingChatId = new URLSearchParams(location.search).get("chat");
 
+function withTimeout(promise, message = "The request took too long. Please check your connection and try again.") {
+  return Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error(message)), 15000))]);
+}
+
 async function operatorCall(action, data = {}) {
   const { data: { session } } = await client.auth.getSession();
+  if (!session) throw new Error("Your operator session has expired. Please sign in again.");
   const response = await fetch(functionUrl, { method: "POST", headers: { "Content-Type": "application/json", apikey: config.supabaseAnonKey, Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ action, ...data }), signal: AbortSignal.timeout(15000) });
   const result = await response.json(); if (!response.ok) throw new Error(result.error || "Request failed"); return result;
 }
@@ -19,18 +24,25 @@ document.querySelector("#loginForm").addEventListener("submit", async (event) =>
   event.preventDefault();
   const email = document.querySelector("#emailInput").value.trim();
   const password = document.querySelector("#operatorPasswordInput").value;
-  const { error } = await client.auth.signInWithPassword({ email, password });
-  document.querySelector("#loginNotice").textContent = error ? error.message : "Signed in.";
+  const submit = event.currentTarget.querySelector("button"); const loginNotice = document.querySelector("#loginNotice");
+  submit.disabled = true; submit.textContent = "Signing in…";
+  try {
+    const { error } = await withTimeout(client.auth.signInWithPassword({ email, password }));
+    loginNotice.textContent = error ? error.message : "Signed in.";
+  } catch (error) { loginNotice.textContent = error.message; }
+  finally { submit.disabled = false; submit.textContent = "Sign in"; }
 });
 document.querySelector("#operatorForgotPasswordButton").addEventListener("click", async () => {
   const email = document.querySelector("#emailInput").value.trim();
   const notice = document.querySelector("#loginNotice");
   if (!email) { notice.textContent = "Enter your email address first."; return; }
-  const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: new URL("auth.html?type=recovery", location.href).href });
-  notice.textContent = error ? error.message : "Check your email for a password-reset link.";
+  try {
+    const { error } = await withTimeout(client.auth.resetPasswordForEmail(email, { redirectTo: new URL("auth.html?type=recovery", location.href).href }));
+    notice.textContent = error ? error.message : "Check your email for a password-reset link.";
+  } catch (error) { notice.textContent = error.message; }
 });
 
-async function loadConversations() {
+async function loadConversations(refreshActive = true) {
   const result = await operatorCall("operator-list"); conversationCache = result.conversations; listEl.replaceChildren();
   for (const c of conversationCache) {
     const button = document.createElement("button"); button.className = `conversation-item ${c.id === activeId ? "active" : ""}`;
@@ -41,7 +53,7 @@ async function loadConversations() {
   if (pendingChatId) {
     const requested = pendingChatId; pendingChatId = null;
     history.replaceState({}, "", location.pathname); await openConversation(requested, false);
-  } else if (activeId) await openConversation(activeId, false);
+  } else if (activeId && refreshActive) await openConversation(activeId, false);
 }
 
 async function openConversation(id, reloadList = true) {
@@ -50,7 +62,7 @@ async function openConversation(id, reloadList = true) {
   document.querySelector("#threadTitle").textContent = result.conversation.visitor_name || "Anonymous visitor";
   document.querySelector("#threadMeta").textContent = `Started ${new Date(result.conversation.created_at).toLocaleString()}`;
   replyForm.classList.remove("hidden"); inboxView.classList.add("thread-open");
-  if (reloadList) loadConversations();
+  if (reloadList) await loadConversations(false);
 }
 
 function renderMessage(message) {
@@ -62,8 +74,14 @@ function renderMessage(message) {
 }
 
 async function sendReply(kind, body) { const result = await operatorCall("operator-reply", { conversationId: activeId, kind, body }); renderMessage(result.message); }
-replyForm.addEventListener("submit", async e => { e.preventDefault(); const body = replyInput.value.trim(); if (!body || !activeId) return; replyInput.value = ""; await sendReply("text", body); });
-document.querySelector("#refreshButton").addEventListener("click", loadConversations);
+replyForm.addEventListener("submit", async e => {
+  e.preventDefault(); const body = replyInput.value.trim(); if (!body || !activeId) return;
+  const sendButton = replyForm.querySelector(".send-button"); sendButton.disabled = true;
+  try { await sendReply("text", body); replyInput.value = ""; }
+  catch (error) { alert(error.message); }
+  finally { sendButton.disabled = false; }
+});
+document.querySelector("#refreshButton").addEventListener("click", () => loadConversations().catch(error => alert(error.message)));
 document.querySelector("#backButton").addEventListener("click", () => inboxView.classList.remove("thread-open"));
 
 function urlBase64ToUint8Array(value) {
@@ -114,7 +132,7 @@ function start(e){drawing=true;ctx.beginPath();ctx.moveTo(...point(e));e.prevent
 canvas.addEventListener("pointerdown",start); canvas.addEventListener("pointermove",move); canvas.addEventListener("pointerup",stop); canvas.addEventListener("pointerleave",stop);
 document.querySelector("#drawButton").addEventListener("click",()=>{dialog.showModal();requestAnimationFrame(sizeCanvas)});
 document.querySelector("#clearDrawing").addEventListener("click",sizeCanvas); document.querySelector("#closeDrawing").addEventListener("click",()=>dialog.close());
-document.querySelector("#sendDrawing").addEventListener("click",async()=>{const image=canvas.toDataURL("image/jpeg",.72);dialog.close();await sendReply("image",image)});
+document.querySelector("#sendDrawing").addEventListener("click",async event=>{event.currentTarget.disabled=true;try{const image=canvas.toDataURL("image/jpeg",.72);await sendReply("image",image);dialog.close()}catch(error){alert(error.message)}finally{event.currentTarget.disabled=false}});
 
-client.auth.onAuthStateChange((_event, session) => { const loggedIn = Boolean(session); loginView.classList.toggle("hidden", loggedIn); inboxView.classList.toggle("hidden", !loggedIn); if (loggedIn) { loadConversations().catch(error => alert(error.message)); updateNotificationState().catch(() => {}); } });
-setInterval(() => { if (!inboxView.classList.contains("hidden")) loadConversations(); }, 5000);
+client.auth.onAuthStateChange((_event, session) => { const loggedIn = Boolean(session); loginView.classList.toggle("hidden", loggedIn); inboxView.classList.toggle("hidden", !loggedIn); if (loggedIn) queueMicrotask(() => { loadConversations().catch(error => alert(error.message)); updateNotificationState().catch(() => {}); }); });
+setInterval(() => { if (!inboxView.classList.contains("hidden")) loadConversations().catch(() => {}); }, 5000);

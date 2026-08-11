@@ -13,6 +13,19 @@ const notice = document.querySelector("#notice");
 let activeId = null;
 let knownIds = new Set();
 
+function withTimeout(promise, message = "The request took too long. Please check your connection and try again.") {
+  return Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error(message)), 15000))]);
+}
+
+function setAuthBusy(busy, label = "Working…", activeButton = "create") {
+  const signIn = document.querySelector("#userLoginForm .primary-button");
+  const create = document.querySelector("#createAccountButton");
+  if (!signIn.dataset.label) signIn.dataset.label = signIn.textContent;
+  signIn.disabled = busy; create.disabled = busy;
+  if (busy) (activeButton === "signIn" ? signIn : create).textContent = label;
+  else { signIn.textContent = signIn.dataset.label; create.textContent = "Create an account"; }
+}
+
 async function call(action, data = {}) {
   if (config.supabaseUrl.includes("YOUR_PROJECT")) throw new Error("Chat is not configured yet.");
   const { data: { session } } = await client.auth.getSession();
@@ -64,7 +77,7 @@ async function openConversation(id, refreshList = true) {
 }
 
 async function newConversation() {
-  const result = await call("user-new"); await loadConversations(); await openConversation(result.conversation.id);
+  const result = await call("user-new"); activeId = result.conversation.id; await loadConversations(); await openConversation(activeId);
 }
 
 form.addEventListener("submit", async (event) => {
@@ -80,34 +93,53 @@ document.querySelector("#userLoginForm").addEventListener("submit", async event 
   event.preventDefault();
   const email = document.querySelector("#userEmailInput").value.trim();
   const password = document.querySelector("#userPasswordInput").value;
-  const { error } = await client.auth.signInWithPassword({ email, password });
-  document.querySelector("#userLoginNotice").textContent = error ? error.message : "Signed in.";
+  const authNotice = document.querySelector("#userLoginNotice"); setAuthBusy(true, "Signing in…", "signIn");
+  try {
+    const { error } = await withTimeout(client.auth.signInWithPassword({ email, password }));
+    authNotice.textContent = error ? error.message : "Signed in.";
+  } catch (error) { authNotice.textContent = error.message; }
+  finally { setAuthBusy(false); }
 });
 document.querySelector("#createAccountButton").addEventListener("click", async () => {
-  const username = document.querySelector("#usernameInput").value.trim();
-  const email = document.querySelector("#userEmailInput").value.trim();
+  const usernameInput = document.querySelector("#usernameInput");
+  const emailInput = document.querySelector("#userEmailInput");
+  const username = usernameInput.value.trim();
+  const email = emailInput.value.trim();
   const password = document.querySelector("#userPasswordInput").value;
-  const notice = document.querySelector("#userLoginNotice");
-  if (!/^[A-Za-z0-9_]{3,24}$/.test(username)) { notice.textContent = "Choose a username of 3–24 letters, numbers, or underscores."; return; }
-  if (!email || password.length < 12) { notice.textContent = "Enter a valid email and a password of at least 12 characters."; return; }
+  const authNotice = document.querySelector("#userLoginNotice");
+  if (!/^[A-Za-z0-9_]{3,24}$/.test(username)) { authNotice.textContent = "Choose a username of 3–24 letters, numbers, or underscores."; usernameInput.focus(); return; }
+  if (!emailInput.checkValidity()) { authNotice.textContent = "Enter a valid email address."; emailInput.focus(); return; }
+  if (password.length < 12) { authNotice.textContent = "Use a password of at least 12 characters."; document.querySelector("#userPasswordInput").focus(); return; }
   const safeRedirect = new URL("auth.html", location.href).href;
-  const { data, error } = await client.auth.signUp({ email, password, options: { emailRedirectTo: safeRedirect, data: { username } } });
-  notice.textContent = error ? error.message : data.session ? "Account created." : "Account created. Check your email to confirm it, then sign in.";
+  setAuthBusy(true, "Creating account…"); authNotice.textContent = "Creating your account…";
+  try {
+    const { data, error } = await withTimeout(client.auth.signUp({ email, password, options: { emailRedirectTo: safeRedirect, data: { username } } }));
+    authNotice.textContent = error ? error.message : data.session ? "Account created and signed in." : "Account created. Check your email to confirm it, then sign in.";
+  } catch (error) { authNotice.textContent = error.message; }
+  finally { setAuthBusy(false); }
 });
 document.querySelector("#forgotPasswordButton").addEventListener("click", async () => {
   const email = document.querySelector("#userEmailInput").value.trim();
   const notice = document.querySelector("#userLoginNotice");
   if (!email) { notice.textContent = "Enter your email address first."; return; }
-  const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: new URL("auth.html?type=recovery", location.href).href });
-  notice.textContent = error ? error.message : "Check your email for a password-reset link.";
+  setAuthBusy(true, "Sending reset email…");
+  try {
+    const { error } = await withTimeout(client.auth.resetPasswordForEmail(email, { redirectTo: new URL("auth.html?type=recovery", location.href).href }));
+    notice.textContent = error ? error.message : "Check your email for a password-reset link.";
+  } catch (error) { notice.textContent = error.message; }
+  finally { setAuthBusy(false); }
 });
-document.querySelector("#newChatButton").addEventListener("click", newConversation);
+document.querySelector("#newChatButton").addEventListener("click", async event => {
+  event.currentTarget.disabled = true;
+  try { await newConversation(); } catch (error) { notice.textContent = error.message; }
+  finally { event.currentTarget.disabled = false; }
+});
 document.querySelector("#signOutButton").addEventListener("click", () => client.auth.signOut());
 document.querySelector("#showChatsButton").addEventListener("click", () => userApp.classList.add("show-sidebar"));
 input.addEventListener("input", () => { input.style.height = "auto"; input.style.height = `${Math.min(input.scrollHeight, 130)}px`; });
 
 client.auth.onAuthStateChange((_event, session) => {
   const loggedIn = Boolean(session); loginView.classList.toggle("hidden", loggedIn); userApp.classList.toggle("hidden", !loggedIn);
-  if (loggedIn) loadConversations(true).catch(error => notice.textContent = error.message);
+  if (loggedIn) queueMicrotask(() => loadConversations(true).catch(error => notice.textContent = error.message));
 });
 setInterval(async () => { if (activeId && !userApp.classList.contains("hidden")) { try { const result = await call("user-thread", { conversationId: activeId }); result.messages.forEach(renderMessage); } catch {} } }, config.pollIntervalMs || 4000);

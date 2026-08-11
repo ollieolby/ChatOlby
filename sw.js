@@ -1,5 +1,5 @@
-const CACHE = "chat-inbox-v1";
-const APP_SHELL = ["./operator.html", "./styles.css", "./operator.js", "./config.js", "./manifest.webmanifest"];
+const CACHE = "chat-inbox-v2";
+const APP_SHELL = ["./operator.html", "./auth.html", "./styles.css", "./operator.js", "./auth.js", "./config.js", "./manifest.webmanifest"];
 
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));
@@ -13,7 +13,11 @@ self.addEventListener("fetch", event => {
   if (event.request.method !== "GET") return;
   event.respondWith(fetch(event.request).then(response => {
     const copy = response.clone(); caches.open(CACHE).then(cache => cache.put(event.request, copy)); return response;
-  }).catch(() => caches.match(event.request).then(response => response || caches.match("./operator.html"))));
+  }).catch(() => caches.match(event.request).then(response => {
+    if (response) return response;
+    if (event.request.mode === "navigate") return caches.match("./operator.html");
+    return new Response("Offline", { status: 503, headers: { "Content-Type": "text/plain" } });
+  })));
 });
 
 self.addEventListener("push", event => {
