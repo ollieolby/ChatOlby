@@ -1,6 +1,7 @@
 .DS_Store
 .supabase/
 supabase/.temp/
+tmp/imagegen/
 .env
 .env.*
 !.env.example
