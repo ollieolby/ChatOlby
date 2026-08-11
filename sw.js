@@ -1,5 +1,5 @@
-const CACHE = "chat-inbox-v3";
-const APP_SHELL = ["./operator.html", "./auth.html", "./styles.css", "./operator.js", "./auth.js", "./config.js", "./manifest.webmanifest", "./assets/logo/olby-logo.png", "./icons/icon-192.png", "./icons/icon-512.png"];
+const CACHE = "chat-inbox-v4";
+const APP_SHELL = ["./operator.html", "./auth.html", "./about.html", "./styles.css", "./retro.css", "./rainbow.css", "./operator.js", "./auth.js", "./config.js", "./manifest.webmanifest", "./assets/logo/olby-logo.png", "./icons/icon-192.png", "./icons/icon-512.png"];
 
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));
