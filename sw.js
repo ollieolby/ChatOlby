@@ -1,4 +1,4 @@
-const CACHE = "chat-inbox-v4";
+const CACHE = "chat-inbox-v7";
 const APP_SHELL = ["./operator.html", "./auth.html", "./about.html", "./styles.css", "./retro.css", "./rainbow.css", "./operator.js", "./auth.js", "./config.js", "./manifest.webmanifest", "./assets/logo/olby-logo.png", "./icons/icon-192.png", "./icons/icon-512.png"];
 
 self.addEventListener("install", event => {

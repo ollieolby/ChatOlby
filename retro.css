@@ -38,6 +38,7 @@ input:focus,textarea:focus{border-color:var(--terminal-green);box-shadow:0 0 0 1
 .message time{color:var(--terminal-dim)}
 .user-sidebar,.conversation-list-panel{background:#030b07}.conversation-item{border-color:var(--terminal-line);color:var(--terminal-green);font-family:"IBM Plex Mono",monospace}.conversation-item:hover,.conversation-item.active{background:#0a2113}.conversation-item span{color:var(--terminal-dim)}
 .sign-out-button,.icon-button,.back-button{color:var(--terminal-green);background:transparent;font-family:"IBM Plex Mono",monospace}
+.page-refresh{position:fixed;z-index:20;top:calc(max(12px,env(safe-area-inset-top)) + 66px);right:14px;padding:9px 11px;border:1px solid var(--terminal-line);background:rgba(2,10,6,.94);color:var(--terminal-green);font:600 10px "IBM Plex Mono",monospace;letter-spacing:.04em;cursor:pointer;box-shadow:0 0 16px rgba(41,255,87,.12)}.page-refresh:active{color:var(--terminal-bright)}.page-refresh:disabled{opacity:.45;cursor:wait}
 .drawing-dialog{border:1px solid var(--terminal-green);border-radius:0;background:var(--terminal-bg);color:var(--terminal-green)}
 .drawing-dialog::backdrop{background:rgba(0,5,2,.88)}
 #drawingCanvas{filter:sepia(1) hue-rotate(70deg) saturate(.8)}

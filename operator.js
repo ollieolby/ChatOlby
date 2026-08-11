@@ -82,6 +82,11 @@ replyForm.addEventListener("submit", async e => {
   finally { sendButton.disabled = false; }
 });
 document.querySelector("#refreshButton").addEventListener("click", () => loadConversations().catch(error => alert(error.message)));
+document.querySelector("#reloginButton").addEventListener("click", async event => {
+  event.currentTarget.disabled = true;
+  try { await client.auth.signOut({ scope: "local" }); }
+  finally { window.location.reload(); }
+});
 document.querySelector("#backButton").addEventListener("click", () => inboxView.classList.remove("thread-open"));
 
 function urlBase64ToUint8Array(value) {
@@ -134,5 +139,5 @@ document.querySelector("#drawButton").addEventListener("click",()=>{dialog.showM
 document.querySelector("#clearDrawing").addEventListener("click",sizeCanvas); document.querySelector("#closeDrawing").addEventListener("click",()=>dialog.close());
 document.querySelector("#sendDrawing").addEventListener("click",async event=>{event.currentTarget.disabled=true;try{const image=canvas.toDataURL("image/jpeg",.72);await sendReply("image",image);dialog.close()}catch(error){alert(error.message)}finally{event.currentTarget.disabled=false}});
 
-client.auth.onAuthStateChange((_event, session) => { const loggedIn = Boolean(session); loginView.classList.toggle("hidden", loggedIn); inboxView.classList.toggle("hidden", !loggedIn); if (loggedIn) queueMicrotask(() => { loadConversations().catch(error => alert(error.message)); updateNotificationState().catch(() => {}); }); });
+client.auth.onAuthStateChange((_event, session) => { const loggedIn = Boolean(session); loginView.classList.toggle("hidden", loggedIn); inboxView.classList.toggle("hidden", !loggedIn); document.querySelector("#reloginButton").classList.toggle("hidden", !loggedIn); if (loggedIn) queueMicrotask(() => { loadConversations().catch(error => alert(error.message)); updateNotificationState().catch(() => {}); }); });
 setInterval(() => { if (!inboxView.classList.contains("hidden")) loadConversations().catch(() => {}); }, 5000);
