@@ -1,6 +1,6 @@
-# Human Chat
+# ChatOlby
 
-A deliberately non-AI chat service. Users create a unique username and sign in with email and password, keep their conversation history across devices, and start multiple chats; you answer from a phone-friendly private inbox with their username, text, or finger drawings.
+A personal chat service. Users create a unique username and sign in with email and password, keep their conversation history across devices, and start multiple chats. The private phone-friendly inbox supports text and finger-drawn image replies.
 
 ## Architecture
 
@@ -68,6 +68,8 @@ Add `/auth.html` to Supabase Authentication → URL Configuration → Redirect U
 To delete one account completely from the SQL Editor, run `delete from auth.users where lower(email) = lower('address@example.com');`. Foreign-key cascades also remove that user's profile, conversations, messages, and push subscriptions, so verify the exact email first.
 
 For a custom domain, add it in the same Pages settings. Put that exact HTTPS URL in Supabase's redirect allow-list too.
+
+The production custom domain is `https://chat.ollieolby.co.uk`. Configure the DNS host `chat` as a `CNAME` pointing to `ollieolby.github.io`, then set `chat.ollieolby.co.uk` as the GitHub Pages custom domain and enable HTTPS.
 
 ## Local preview
 

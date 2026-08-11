@@ -57,3 +57,11 @@ alter table public.conversations enable row level security;
 alter table public.messages enable row level security;
 alter table public.push_subscriptions enable row level security;
 -- No public policies: only the Edge Function's service-role client can access these tables.
+
+-- RLS bypass and SQL privileges are separate in Postgres. The Edge Function
+-- needs explicit table privileges; browser roles intentionally receive none.
+grant usage on schema public to service_role;
+grant select, insert, update, delete on table public.profiles to service_role;
+grant select, insert, update, delete on table public.conversations to service_role;
+grant select, insert, update, delete on table public.messages to service_role;
+grant select, insert, update, delete on table public.push_subscriptions to service_role;

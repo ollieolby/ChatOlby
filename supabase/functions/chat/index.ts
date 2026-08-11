@@ -77,10 +77,11 @@ Deno.serve(async (req) => {
       const updates: Record<string,string> = { updated_at: new Date().toISOString() };
       if (conversation.title === "Chat with Ollie") updates.title = body.slice(0, 45);
       await admin.from("conversations").update(updates).eq("id", conversation.id);
-      EdgeRuntime.waitUntil(
-        notifyOperator(conversation.id, conversation.visitor_name || "a visitor", body)
-          .catch(pushError => console.error("Push notification setup failed", pushError)),
-      );
+      const pushTask = notifyOperator(conversation.id, conversation.visitor_name || "a visitor", body)
+        .catch(pushError => console.error("Push notification setup failed", pushError));
+      const edgeRuntime = (globalThis as typeof globalThis & { EdgeRuntime?: { waitUntil(task: Promise<unknown>): void } }).EdgeRuntime;
+      if (edgeRuntime?.waitUntil) edgeRuntime.waitUntil(pushTask);
+      else pushTask.catch(() => {});
       return json({ message: data });
     }
 
