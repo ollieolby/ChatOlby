@@ -50,8 +50,15 @@ Deno.serve(async (req) => {
       return json({ conversations: data.map((c: any) => ({ ...c, last_message: [...c.messages].sort((a,b)=>b.created_at.localeCompare(a.created_at))[0]?.body?.slice(0,80), messages: undefined })) });
     }
     if (input.action === "user-new") {
-      const { data: profile } = await admin.from("profiles").select("username").eq("user_id", user.id).single();
-      if (!profile) return json({ error: "Your account profile is incomplete" }, 409);
+      let { data: profile } = await admin.from("profiles").select("username").eq("user_id", user.id).single();
+      if (!profile) {
+        const storedUsername = String(user.user_metadata?.username || "").trim();
+        if (!/^[A-Za-z0-9_]{3,24}$/.test(storedUsername)) return json({ error: "Your account has no valid username. Please register again or contact the operator." }, 409);
+        const { data: repaired, error: repairError } = await admin.from("profiles").insert({ user_id: user.id, username: storedUsername }).select("username").single();
+        if (repairError?.code === "23505") return json({ error: "That username is already in use. Please contact the operator." }, 409);
+        if (repairError) throw repairError;
+        profile = repaired;
+      }
       const { data, error } = await admin.from("conversations").insert({ user_id: user.id, visitor_name: profile.username }).select("id, title, created_at").single();
       if (error) throw error; return json({ conversation: data });
     }
