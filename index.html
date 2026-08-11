@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f5efe5" />
+    <meta name="referrer" content="strict-origin" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'" />
+    <title>Chat with Ollie</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <section id="userLoginView" class="login-card">
+      <div class="avatar dark">O</div>
+      <h1>Chat with Ollie</h1>
+      <p>Sign in to send me a message and keep your chat history across devices.</p>
+      <form id="userLoginForm">
+        <input id="usernameInput" type="text" autocomplete="username" minlength="3" maxlength="24" pattern="[A-Za-z0-9_]+" placeholder="Username (new accounts)" />
+        <input id="userEmailInput" type="email" autocomplete="email" placeholder="you@example.com" required />
+        <input id="userPasswordInput" type="password" autocomplete="current-password" minlength="12" placeholder="Password" required />
+        <button class="primary-button" type="submit">Sign in</button>
+        <button id="createAccountButton" class="secondary-button" type="button">Create an account</button>
+      </form>
+      <p id="userLoginNotice" class="notice"></p>
+    </section>
+    <main id="userApp" class="user-app hidden">
+      <aside class="user-sidebar">
+        <header><h1>Your chats</h1><button id="newChatButton" class="primary-button" type="button">New</button></header>
+        <div id="userConversationList" class="conversation-list"></div>
+        <button id="signOutButton" class="sign-out-button" type="button">Sign out</button>
+      </aside>
+      <section class="chat-card">
+        <header class="chat-header">
+          <button id="showChatsButton" class="back-button" aria-label="Show chats">☰</button>
+          <div class="avatar">O</div>
+          <div>
+            <h1>Chat with Ollie</h1>
+            <p><span class="status-dot"></span> A real human, replying from his phone</p>
+          </div>
+        </header>
+        <div id="messages" class="messages" aria-live="polite"></div>
+        <form id="composer" class="composer">
+          <label class="sr-only" for="messageInput">Message</label>
+          <textarea id="messageInput" rows="1" maxlength="2000" placeholder="Write a message…" required></textarea>
+          <button class="send-button" aria-label="Send message" type="submit">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 4 17 8-17 8 3-8-3-8Zm3.7 7h8.4L6.4 6.5 7.7 11Zm-1.3 6.5 9.7-4.5H7.7l-1.3 4.5Z"/></svg>
+          </button>
+        </form>
+        <p id="notice" class="notice" role="status"></p>
+      </section>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4"></script>
+    <script src="config.js"></script>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

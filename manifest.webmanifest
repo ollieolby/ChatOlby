@@ -1,0 +1,15 @@
+{
+  "id": "operator.html",
+  "name": "Ollie's Chat Inbox",
+  "short_name": "Chat Inbox",
+  "description": "Private operator inbox for replying to website chats.",
+  "start_url": "operator.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fffdf9",
+  "theme_color": "#17221c",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
